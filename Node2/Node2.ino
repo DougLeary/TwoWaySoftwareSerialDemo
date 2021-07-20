@@ -1,30 +1,50 @@
 //node2
 
 #include <SoftwareSerial.h>
-SoftwareSerial sender(D1,D2);   // connect to TX/RX on the other node
-// NOTE: these pins must be disconnected during upload to avoid a port error
+SoftwareSerial serial(D1,D2);   // connect to TX/RX on the other node
+
+int pinLed = D3;
+int pinButton = D4;
+bool isMotion = false;
 
 void checkSerial() {
-  if (Serial.available()) {
-    String msg = Serial.readStringUntil('\n');
-    Serial.println("Node2 received " + msg);
+  if (serial.available()) {
+    String msg = serial.readStringUntil('\n');
+    Serial.println("Received " + msg);
     if (msg == "daytime") {
-      sender.write("Node 2 turning lights OFF\n");
+      digitalWrite(pinLed, LOW);
+      serial.write("OFF\n");
     } else if (msg == "nighttime") {
-      sender.write("Node2 turning lights ON\n");
+      digitalWrite(pinLed, HIGH);
+      serial.write("ON\n");
+    }
+  }
+}
+
+void checkButton() {
+  bool isDown = (digitalRead(pinButton) == LOW);
+  if (isDown != isMotion) {
+    isMotion = isDown;
+    if (isMotion) {
+      serial.write("MOTION\n");
+    } else {
+      serial.write("NOMOTION\n");
     }
   }
 }
 
 void setup() {
-  delay(10000);  // connecting wires
+  pinMode(D3, OUTPUT);
+  pinMode(D4, INPUT_PULLUP);
+
   Serial.begin(9600);
   while (!Serial);
-  Serial.println("Node 2 Active");
-  sender.begin(9600);
+  delay(100);
+  Serial.println("Node 2 Running");
+  serial.begin(9600);
 }
 
 void loop() {
   checkSerial();
-  delay(100);
+  checkButton();
 }
