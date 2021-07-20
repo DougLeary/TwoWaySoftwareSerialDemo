@@ -1,17 +1,31 @@
-This simple demo shows how to perform two-way communication between two nodes (in this case two NodeMCU ESP8266 boards) using the SoftwareSerial library. Hopefuly the code is self-explanatory. The pins used for RX and TX in the code (D1, D2) are NodeMCU pins GPIO5 and 4 respectively. You can use different GPIO pins if you want. The circuit is simple - just connect D2 on each node to RX on the other. Each node receives communication by checking for Serial input, which uses the default RX pin. If you want you can simply wire TX to RX and RX to TX, and instantiate the SoftwareSerial object with (RX,TX). I used D1,D2 to illustrate that it would work 
+### Overview
+This simple demo shows how to perform two-way communication between two nodes (in this case two NodeMCU ESP8266 boards) using the SoftwareSerial library. I have seen many demos and tutorial videos showing how to send information across the TX/RX interface, treating one node as sender and the other as receiver.
+This demo shows communication between two nodes that can both initiate messages. 
+The pins used for RX and TX in the code (D1, D2) are NodeMCU pins GPIO5 and 4 respectively. You can use different GPIO pins if you want. 
 
-I have seen many demos and tutorial videos showing how to send information across the TX/RX interface, treating one node as sender and the other as receiver.
-This demo shows communication in both directions. The method shown here is not robust for high-speed asynchronous communication, because it has no provision for handling collisions (when both nodes
-happen to send messages at the same time). But it should be fine for a master/slave application where one node initiates communication and the other responds, or for simple applications
-where messages are not being sent every second.
+My reason for this two-way master/master communication between controllers, as opposed to a master/slave arrangement where one node initiates communications and another merely replies, was to develop a gateway between a mesh network and a wifi network. A single ESP cannot do both at the same time. I want to use a mesh network for home automation, but control and communicate with it using an HTML interface. So one ESP node in my mesh will be hardwired to another ESP that will handle wifi. The two-way SoftwareSerial communication will serve as a bridge between them. This demo shows only how to make the serial communication work.  
 
-One thing I found out the hard way is that the Arduino IDE will not upload to a node whose TX/RX pins are physically wired to another. You must disconnect these wires to upload code. 
-This is an important consideration if you are creating a soldered circuit - you would need to include a disconnect switch on the TX and RX lines (or a normally-closed button you can 
-hold down while uploading to keep those lines disconnected. The same problem exists for opening the Serial Monitor - the TX/RX pins must not be connected to another running controller.
-If you want to use Serial Monitor for debugging, open it before you hook up the wires. 
+### Circuit
+- Connect D1 and D2 on one ESP to D2 and D1 on the other, respectively. These are the serial communications lines.
+- On each controller connect the positive side of a LED to pin D3, and the negative side to a 220-ohm resistor which then goes to GND.
+- On Node2 connect a pushbutton between pin D4 and GND.
 
-Another tip about using Serial Monitor when developing apps that communicate between two devices: you can open separate serial monitors for them if you start the Arduino IDE twice. 
-After you have an instance running, simply open the other by holding the SHIFT key down while you click the icon to start the IDE a second time. Note that all files that are open 
+### Code
+Node1.ino should be uploaded to one ESP controller. Node2.ino should be uploaded to the other. 
+
+Node 1 sends a message to Node 2 every 3 seconds, alternating between "daylight" and "nighttime". Every message is terminated with an "\n" character. Node 2 receives messages by calling the SoftwareSerial method readStringUntil('\n'). This reads from the serial buffer up until the '\n' character and returns just the string, without the terminator. If the message is "nighttime" the code turns on the led at D3, and turns it off if the message is "daytime". The code then sends Node 1 a serial message that says either "ON" or "OFF" to indicate what it did. Node 1 turns the led at its D3 to show that it received the message. 
+
+The button attached to D4 on Node 2 simulates a motion detector. When the button is pressed Node 2 sends the message "MOTION" to Node 1. When the button is released it sends the message "NOMOTION". The checkButton() function debounces the button by setting a bool isDown when the button's state is read by digitalRead, and comparing it with a global bool isMotion. When they are different it means the button state has changed. 
+
+For additional confirmation of what is going on, both nodes also display all received messages in the serial monitor. 
+
+When Node 1 receives the message "MOTION" or "NOMOTION" it turns the led on its pin D4 on or off, respectively.
+
+### No Collision Checking
+The method shown here is not robust for high-speed asynchronous communication, because it has no provision for handling collisions (receiving a message while another message is being processed). But it should be fine for home automation applications where a low volume of messages is expected. 
+
+#### IDE tip
+To open a separate serial monitor for each node, start the Arduino IDE twice: with one IDE instance running, open another by holding the SHIFT key down while you click the IDE icon. Note that all files that are open 
 in the first IDE instance will be opened again by the second, so after opening your desired file you should close the duplicate IDE windows to avoid confusion. You can actually 
-open as many IDE instances this way as you want. Each one will have its own Port assignment and its own serial monitor, which can be open side by side.
+open as many IDE instances as you want. Each one will have its own Port assignment and its own serial monitor.
 
