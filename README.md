@@ -3,7 +3,7 @@ This simple demo shows how to perform two-way communication between two nodes (i
 This demo shows communication between two nodes that can both initiate messages. 
 The pins used for RX and TX in the code (D1, D2) are NodeMCU pins GPIO5 and 4 respectively. You can use different GPIO pins if you want. 
 
-My reason for this two-way master/master communication between controllers, as opposed to a master/slave arrangement where one node initiates communications and another merely replies, was to develop a gateway between a mesh network and a wifi network. A single ESP cannot do both at the same time. I want to use a mesh network for home automation, but control and communicate with it using an HTML interface. So one ESP node in my mesh will be hardwired to another ESP that will handle wifi. The two-way SoftwareSerial communication will serve as a bridge between them. This demo shows only how to make the serial communication work.  
+My original reason for this two-way async communication between controllers was to create a bridge between a mesh network and a wifi network using two NodeMCU boards wired together. I thought a single device could not be on both networks at the same time, but it turns out it's no big deal. If having a PainlessMesh network make/receive web requests is the reason for your interest, this post over on GitLab shows how to do it all on one node: https://gitlab.com/painlessMesh/painlessMesh/-/issues/368
 
 ### Circuit
 - Connect D1 and D2 on one ESP to D2 and D1 on the other, respectively. These are the serial communications lines.
